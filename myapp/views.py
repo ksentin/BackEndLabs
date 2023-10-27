@@ -29,3 +29,17 @@ def create_user():
     user = {"id": user_id, **data}
     users[user_id] = user
     return jsonify(user)
+
+
+@app.route('/users', methods=['GET'])
+def get_users():
+    return jsonify(list(users.values()))
+
+
+@app.route('/user/<user_id>', methods=['GET'])
+def get_user(user_id):
+    user = users.get(user_id)
+    if user:
+        return jsonify(user)
+    else:
+        return jsonify({"message": "User not found"}), 404
