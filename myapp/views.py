@@ -5,6 +5,7 @@ from flask import jsonify, request
 from datetime import datetime
 
 users = {}
+categories = {}
 
 @app.route('/healthcheck', methods=['GET'])
 def healthcheck():
@@ -52,3 +53,12 @@ def delete_user(user_id):
         return jsonify({"message": "User deleted successfully"}), 200
     else:
         return jsonify({"message": "User not found"}), 404
+
+
+@app.route('/category', methods=['POST'])
+def create_category():
+    data = request.get_json()
+    category_id = str(uuid.uuid4())
+    category = {"id": category_id, **data}
+    categories[category_id] = category
+    return jsonify(category)
