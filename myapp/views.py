@@ -62,3 +62,11 @@ def create_category():
     category = {"id": category_id, **data}
     categories[category_id] = category
     return jsonify(category)
+
+
+@app.route('/categories', methods=['GET'])
+def get_categories():
+    return jsonify(list(categories.values()))
+
+
+
