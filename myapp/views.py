@@ -6,6 +6,7 @@ from datetime import datetime
 
 users = {}
 categories = {}
+records = {}
 
 @app.route('/healthcheck', methods=['GET'])
 def healthcheck():
@@ -78,3 +79,11 @@ def delete_category(category_id):
     else:
         return jsonify({"message": "Category not found"}), 404
 
+
+@app.route('/record', methods=['POST'])
+def create_record():
+    data = request.get_json()
+    record_id = str(uuid.uuid4())
+    record = {"id": record_id, **data}
+    records[record_id] = record
+    return jsonify(record)
