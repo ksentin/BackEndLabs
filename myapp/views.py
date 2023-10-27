@@ -101,3 +101,13 @@ def get_record(record_id):
         return jsonify(record)
     else:
         return jsonify({"message": "Record not found"}), 404
+
+
+@app.route('/record/<record_id>', methods=['DELETE'])
+def delete_record(record_id):
+    record = records.get(record_id)
+    if record:
+        del records[record_id]
+        return jsonify({"message": "Record deleted successfully"})
+    else:
+        return jsonify({"message": "Record not found"}), 404
