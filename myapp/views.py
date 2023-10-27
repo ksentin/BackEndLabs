@@ -87,3 +87,17 @@ def create_record():
     record = {"id": record_id, **data}
     records[record_id] = record
     return jsonify(record)
+
+
+@app.route('/records', methods=['GET'])
+def get_all_records():
+    return jsonify(list(records.values()))
+
+
+@app.route('/record/<record_id>', methods=['GET'])
+def get_record(record_id):
+    record = records.get(record_id)
+    if record:
+        return jsonify(record)
+    else:
+        return jsonify({"message": "Record not found"}), 404
