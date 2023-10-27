@@ -1,6 +1,10 @@
+import uuid
+
 from myapp import app
-from flask import jsonify
+from flask import jsonify, request
 from datetime import datetime
+
+users = {}
 
 @app.route('/healthcheck', methods=['GET'])
 def healthcheck():
@@ -12,6 +16,16 @@ def healthcheck():
     }
     return jsonify(response), 200
 
+
 @app.route('/', methods=['GET'])
 def home():
     return 'This is the main endpoint.', 200
+
+
+@app.route('/user', methods=['POST'])
+def create_user():
+    data = request.get_json()
+    user_id = str(uuid.uuid4())
+    user = {"id": user_id, **data}
+    users[user_id] = user
+    return jsonify(user)
