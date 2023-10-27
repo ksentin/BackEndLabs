@@ -69,4 +69,12 @@ def get_categories():
     return jsonify(list(categories.values()))
 
 
+@app.route('/category/<category_id>', methods=['DELETE'])
+def delete_category(category_id):
+    category = categories.get(category_id)
+    if category:
+        del categories[category_id]
+        return jsonify({"message": f"Category {category_id} has been deleted"})
+    else:
+        return jsonify({"message": "Category not found"}), 404
 
