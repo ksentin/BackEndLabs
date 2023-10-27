@@ -43,3 +43,12 @@ def get_user(user_id):
         return jsonify(user)
     else:
         return jsonify({"message": "User not found"}), 404
+
+
+@app.route('/user/<user_id>', methods=['DELETE'])
+def delete_user(user_id):
+    if user_id in users:
+        del users[user_id]
+        return jsonify({"message": "User deleted successfully"}), 200
+    else:
+        return jsonify({"message": "User not found"}), 404
