@@ -83,15 +83,43 @@ def delete_category(category_id):
 @app.route('/record', methods=['POST'])
 def create_record():
     data = request.get_json()
+    user_id = data.get('user_id')
+    category_id = data.get('category_id')
+    amount = data.get('amount')
+
+    if not user_id or not category_id or not amount:
+        return jsonify({"error": "Missing required parameters"}), 400
+
     record_id = str(uuid.uuid4())
-    record = {"id": record_id, **data}
+
+    record = {
+        "id": record_id,
+        "user_id": user_id,
+        "category_id": category_id,
+        "amount": amount,
+        "created_at": datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    }
+
     records[record_id] = record
-    return jsonify(record)
+
+    return jsonify(record), 201
 
 
 @app.route('/records', methods=['GET'])
-def get_all_records():
-    return jsonify(list(records.values()))
+def get_records():
+    user_id = request.args.get('user_id')
+    category_id = request.args.get('category_id')
+
+    if not user_id and not category_id:
+        return jsonify({"error": "Missing user_id and category_id parameters"}), 400
+
+    filtered_records = []
+
+    for record_id, record in records.items():
+        if (not user_id or record['user_id'] == user_id) and (not category_id or record['category_id'] == category_id):
+            filtered_records.append(record)
+
+    return jsonify(filtered_records), 200
 
 
 @app.route('/record/<record_id>', methods=['GET'])
