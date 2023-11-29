@@ -4,9 +4,14 @@ from myapp import app
 from flask import jsonify, request
 from datetime import datetime
 
-users = {}
-categories = {}
-records = {}
+from schemes.user_schema import UserSchema
+from schemes.сategory_schema import CategorySchema
+from schemes.record_schema import RecordSchema
+from marshmallow import ValidationError
+
+#users = {}
+#categories = {}
+#records = {}
 
 # 404 (Not Found)
 @app.errorhandler(404)
@@ -41,17 +46,16 @@ def home():
 
 @app.route('/user', methods=['POST'])
 def create_user():
-    data = request.get_json()
+    user_schema = UserSchema()
     try:
-        user_data = UserSchema().load(data)
-    except ValidationError as e:
+        data = user_schema.load(request.get_json())
+    except Exception as e:
         return jsonify({"error": str(e)}), 400
 
-    user = User(id=str(uuid.uuid4()), **user_data)
-    db.session.add(user)
-    db.session.commit()
-
-    return jsonify({"id": user.id, "username": user.username})
+    user_id = str(uuid.uuid4())
+    user = {"id": user_id, **data}
+    users[user_id] = user
+    return jsonify(user), 201
 
 
 @app.route('/users', methods=['GET'])
@@ -141,9 +145,10 @@ def get_records():
     user_id = request.args.get('user_id')
     category_id = request.args.get('category_id')
 
-    errors = RecordSchema().validate({'user_id': user_id, 'category_id': category_id})
-    if errors:
-        return jsonify({"error": errors}), 400
+    try:
+        RecordSchema().validate({'user_id': user_id, 'category_id': category_id}, partial=True)
+    except ValidationError as e:
+        return jsonify({"error": e.messages}), 400
 
     if not user_id and not category_id:
         return jsonify({"error": "Missing user_id and category_id parameters"}), 400
