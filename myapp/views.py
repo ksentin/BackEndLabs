@@ -8,6 +8,21 @@ users = {}
 categories = {}
 records = {}
 
+# 404 (Not Found)
+@app.errorhandler(404)
+def not_found(error):
+    return jsonify({"error": "Not Found"}), 404
+
+# 400 (Bad Request)
+@app.errorhandler(400)
+def bad_request(error):
+    return jsonify({"error": "Bad Request"}), 400
+
+# 500 (Internal Server Error)
+@app.errorhandler(500)
+def internal_server_error(error):
+    return jsonify({"error": "Internal Server Error"}), 500
+
 @app.route('/healthcheck', methods=['GET'])
 def healthcheck():
     current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -44,7 +59,7 @@ def get_user(user_id):
     if user:
         return jsonify(user)
     else:
-        return jsonify({"message": "User not found"}), 404
+        abort(404)
 
 
 @app.route('/user/<user_id>', methods=['DELETE'])
@@ -53,7 +68,7 @@ def delete_user(user_id):
         del users[user_id]
         return jsonify({"message": "User deleted successfully"}), 200
     else:
-        return jsonify({"message": "User not found"}), 404
+        abort(404)
 
 
 @app.route('/category', methods=['POST'])
