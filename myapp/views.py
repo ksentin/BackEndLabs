@@ -42,22 +42,30 @@ def home():
 @app.route('/user', methods=['POST'])
 def create_user():
     data = request.get_json()
-    user_id = str(uuid.uuid4())
-    user = {"id": user_id, **data}
-    users[user_id] = user
-    return jsonify(user)
+    try:
+        user_data = UserSchema().load(data)
+    except ValidationError as e:
+        return jsonify({"error": str(e)}), 400
+
+    user = User(id=str(uuid.uuid4()), **user_data)
+    db.session.add(user)
+    db.session.commit()
+
+    return jsonify({"id": user.id, "username": user.username})
 
 
 @app.route('/users', methods=['GET'])
 def get_users():
-    return jsonify(list(users.values()))
+    user_schema = UserSchema(many=True)
+    return jsonify(user_schema.dump(users.values())), 200
 
 
 @app.route('/user/<user_id>', methods=['GET'])
 def get_user(user_id):
     user = users.get(user_id)
     if user:
-        return jsonify(user)
+        user_schema = UserSchema()
+        return jsonify(user_schema.dump(user)), 200
     else:
         abort(404)
 
@@ -74,23 +82,33 @@ def delete_user(user_id):
 @app.route('/category', methods=['POST'])
 def create_category():
     data = request.get_json()
+
+    errors = CategorySchema().validate(data)
+    if errors:
+        return jsonify({"error": errors}), 400
+
     category_id = str(uuid.uuid4())
     category = {"id": category_id, **data}
     categories[category_id] = category
-    return jsonify(category)
+    return jsonify(category), 201
 
 
 @app.route('/categories', methods=['GET'])
 def get_categories():
-    return jsonify(list(categories.values()))
+    category_schema = CategorySchema(many=True)
+    return jsonify(category_schema.dump(list(categories.values()))), 200
 
 
 @app.route('/category/<category_id>', methods=['DELETE'])
 def delete_category(category_id):
+    if not uuid.UUID(category_id, version=4):
+        return jsonify({"error": "Invalid category_id format"}), 400
+
     category = categories.get(category_id)
     if category:
         del categories[category_id]
-        return jsonify({"message": f"Category {category_id} has been deleted"})
+        category_schema = CategorySchema()
+        return jsonify({"message": f"Category {category_id} has been deleted", "deleted_category": category_schema.dump(category)}), 200
     else:
         return jsonify({"message": "Category not found"}), 404
 
@@ -98,20 +116,18 @@ def delete_category(category_id):
 @app.route('/record', methods=['POST'])
 def create_record():
     data = request.get_json()
-    user_id = data.get('user_id')
-    category_id = data.get('category_id')
-    amount = data.get('amount')
 
-    if not user_id or not category_id or not amount:
-        return jsonify({"error": "Missing required parameters"}), 400
+    errors = RecordSchema().validate(data)
+    if errors:
+        return jsonify({"error": errors}), 400
 
     record_id = str(uuid.uuid4())
 
     record = {
         "id": record_id,
-        "user_id": user_id,
-        "category_id": category_id,
-        "amount": amount,
+        "user_id": data['user_id'],
+        "category_id": data['category_id'],
+        "amount": data['amount'],
         "created_at": datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     }
 
@@ -125,6 +141,10 @@ def get_records():
     user_id = request.args.get('user_id')
     category_id = request.args.get('category_id')
 
+    errors = RecordSchema().validate({'user_id': user_id, 'category_id': category_id})
+    if errors:
+        return jsonify({"error": errors}), 400
+
     if not user_id and not category_id:
         return jsonify({"error": "Missing user_id and category_id parameters"}), 400
 
@@ -134,14 +154,16 @@ def get_records():
         if (not user_id or record['user_id'] == user_id) and (not category_id or record['category_id'] == category_id):
             filtered_records.append(record)
 
-    return jsonify(filtered_records), 200
+    record_schema = RecordSchema(many=True)
+    return jsonify(record_schema.dump(filtered_records)), 200
 
 
 @app.route('/record/<record_id>', methods=['GET'])
 def get_record(record_id):
     record = records.get(record_id)
     if record:
-        return jsonify(record)
+        record_schema = RecordSchema()
+        return jsonify(record_schema.dump(record)), 200
     else:
         return jsonify({"message": "Record not found"}), 404
 
@@ -151,6 +173,6 @@ def delete_record(record_id):
     record = records.get(record_id)
     if record:
         del records[record_id]
-        return jsonify({"message": "Record deleted successfully"})
+        return jsonify({"message": "Record deleted successfully"}), 200
     else:
         return jsonify({"message": "Record not found"}), 404
