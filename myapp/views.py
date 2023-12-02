@@ -63,7 +63,6 @@ def get_currencies():
     return jsonify(currency_schema.dump(Currency.query.all())), 200
 
 
-
 @app.route('/user', methods=['POST'])
 def create_user():
     user_schema = UserSchema()
@@ -124,12 +123,20 @@ def create_category():
     if errors:
         return jsonify({"error": errors}), 400
 
-    category = Category(name=data['name'])
+    is_custom = data.get('is_custom', False)
+    user_id = data.get('user_id', 0)
+
+    if is_custom:
+        user_exists = User.query.filter_by(id=user_id).first()
+        if not user_exists:
+            return jsonify({"error": "User with specified user_id not found"}), 404
+
+    category = Category(name=data['name'], is_custom=is_custom, user_id=user_id)
 
     db.session.add(category)
     db.session.commit()
 
-    return jsonify({"id": category.id, "name": category.name}), 201
+    return jsonify({"id": category.id, "name": category.name, "is_custom": category.is_custom, "user_id": category.user_id}), 201
 
 
 @app.route('/categories', methods=['GET'])
@@ -174,6 +181,9 @@ def create_record():
     category = Category.query.get(category_id)
     if not category:
         return jsonify({"error": f"Category with id {category_id} not found"}), 404
+
+    if category.is_custom and category.user_id != user_id:
+        return jsonify({"error": "Wrong user to use this category"}), 403
 
     currency_id = data.get('currency_id')
     if currency_id:
@@ -226,7 +236,23 @@ def get_records():
     records = query.all()
     record_schema = RecordSchema(many=True)
 
-    return jsonify(record_schema.dump(records)), 200
+    records_data = []
+    for record in records:
+        user_name = User.query.get(record.user_id).name
+        category_name = Category.query.get(record.category_id).name
+        currency_name = record.currency.name if record.currency else None
+
+        record_data = {
+            "id": record.id,
+            "user": user_name,
+            "category": category_name,
+            "amount": record.amount,
+            "currency": currency_name,
+            "created_at": record.created_at
+        }
+        records_data.append(record_data)
+
+    return jsonify(records_data), 200
 
 
 @app.route('/record/<record_id>', methods=['GET'])

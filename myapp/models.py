@@ -7,6 +7,7 @@ class Currency(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), nullable=False)
 
+
 class User(db.Model):
     __tablename__ = "user"
 
@@ -23,6 +24,8 @@ class Category(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String, nullable=False)
+    is_custom = db.Column(db.Boolean, nullable=False, default=False)
+    user_id = db.Column(db.Integer, nullable=False, default=0)
 
     records = db.relationship("Record", back_populates="category", lazy="dynamic")
 
@@ -37,6 +40,5 @@ class Record(db.Model):
     created_at = db.Column(db.DateTime, nullable=False, server_default=func.now())
 
     user = db.relationship("User", back_populates="records")
-    category = db.relationship("Category", back_populates="records")
+    category = db.relationship("Category", back_populates="records", foreign_keys=[category_id])
     currency = db.relationship("Currency")
-
