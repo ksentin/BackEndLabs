@@ -13,7 +13,7 @@ class User(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(128), nullable=False)
-    password = db.Column(db.String(256), nullable=False)
+    password = db.Column(db.String(256), nullable=False, server_default='')
 
     default_currency_id = db.Column(db.Integer, db.ForeignKey('currency.id'))
     default_currency = db.relationship('Currency', foreign_keys=[default_currency_id])

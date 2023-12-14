@@ -47,8 +47,8 @@ def get_currencies():
     currency_schema = CurrencySchema(many=True)
     return jsonify(currency_schema.dump(Currency.query.all())), 200
 
-@app.route('/user', methods=['POST'])
-def create_user():
+@app.route('/register', methods=['POST'])
+def register_user():
     user_schema = UserSchema()
     try:
         data = user_schema.load(request.get_json())
@@ -63,7 +63,9 @@ def create_user():
         db.session.add(currency)
         db.session.commit()
 
-    user = User(name=data['name'], default_currency_id=currency.id)
+    hashed_password = pbkdf2_sha256.hash(data['password'])
+
+    user = User(name=data['name'], default_currency_id=currency.id, password=hashed_password)
     db.session.add(user)
     db.session.commit()
 
