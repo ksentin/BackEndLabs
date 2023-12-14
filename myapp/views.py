@@ -11,6 +11,8 @@ from schemes.record_schema import RecordSchema
 from schemes.currency_schema import CurrencySchema
 from marshmallow import ValidationError
 
+from passlib.hash import pbkdf2_sha256
+
 # 404 (Not Found)
 @app.errorhandler(404)
 def not_found(error):
@@ -36,32 +38,14 @@ def healthcheck():
     }
     return jsonify(response), 200
 
-
 @app.route('/', methods=['GET'])
 def home():
     return 'This is the main endpoint.', 200
-
-
-@app.route('/currency', methods=['POST'])
-def create_currency():
-    currency_schema = CurrencySchema()
-    try:
-        data = currency_schema.load(request.get_json())
-    except ValidationError as e:
-        return jsonify({"error": e.messages}), 400
-
-    currency = Currency(name=data['name'])
-    db.session.add(currency)
-    db.session.commit()
-
-    return jsonify({"id": currency.id, "name": currency.name}), 201
-
 
 @app.route('/currencies', methods=['GET'])
 def get_currencies():
     currency_schema = CurrencySchema(many=True)
     return jsonify(currency_schema.dump(Currency.query.all())), 200
-
 
 @app.route('/user', methods=['POST'])
 def create_user():
@@ -71,13 +55,15 @@ def create_user():
     except ValidationError as e:
         return jsonify({"error": e.messages}), 400
 
-    currency_id = data.get('default_currency_id')
-    try:
-        Currency.query.filter_by(id=currency_id).one()
-    except NoResultFound:
-        return jsonify({"error": f"Currency with id {currency_id} not found"}), 400
+    currency_name = data.get('default_currency_name')
+    currency = Currency.query.filter_by(name=currency_name).first()
 
-    user = User(name=data['name'], default_currency_id=currency_id)
+    if not currency:
+        currency = Currency(name=currency_name)
+        db.session.add(currency)
+        db.session.commit()
+
+    user = User(name=data['name'], default_currency_id=currency.id)
     db.session.add(user)
     db.session.commit()
 
