@@ -52,9 +52,13 @@ https://backend2-kwlg.onrender.com
 
 **Лабораторна робота №3**
 
-Варіант: 1633 mod 3 = 1
+Варіант: 16 mod 3 = 1
 
 https://backendlab3.onrender.com
+
+**Лабораторна робота №4**
+
+https://backendlab4.onrender.com
 
    
 
